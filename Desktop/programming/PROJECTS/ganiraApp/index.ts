@@ -1,39 +1,30 @@
 import "reflect-metadata";
 import { config } from "dotenv";
-import express from "express";
+import express, { Application, Request, Response } from "express";
 import mongoose from "mongoose";
-
-
 import bodyParser from "body-parser";
-
 import cors from "cors";
-
-
+import http from "http";
+import { Server, Socket } from "socket.io";
+import { messageRoutes } from "./routes/messagesRouter/messages.routes";
 
 config();
 
-
-// const swaggerSpec = require("./utils/swagger");
-// const swaggerUi = require("swagger-ui-express");
-const app = express();
+const app: Application = express();
+const server = http.createServer(app);
+const io = new Server(server);
 
 process.on("unhandledRejection", (reason, promise) => {
   console.error("Unhandled Rejection at:", promise, "reason:", reason);
-  // You can log or handle the rejection here
 });
 
-const PORT = process.env.PORT;
+const PORT = process.env.PORT || 3000;
 
-import { createConnection } from "typeorm";
-
-
-
-const connectionOptions: any = {
+mongoose.connect(process.env.MONGO || 'default_connection_string', {
   useNewUrlParser: true,
   useUnifiedTopology: true,
-};
+} as mongoose.ConnectOptions);
 
-mongoose.connect(process.env.MONGO || 'default_connection_string', connectionOptions);
 
 const mongodbConnection = mongoose.connection;
 
@@ -41,17 +32,6 @@ mongodbConnection.on('error', console.error.bind(console, 'MongoDB connection er
 mongodbConnection.once('open', () => {
   console.log('Connected to MongoDB');
 });
-console.log("PORT:", process.env.PORT);
-console.log("MONGO:", process.env.MONGO);
-
-
-createConnection()
-  .then((connection) => {
-    console.log("Database connected successfully!");
-  })
-  .catch((error) => {
-    console.log("Error while connecting to database: ", error);
-  });
 
 app.use(bodyParser.json());
 app.use(
@@ -60,15 +40,33 @@ app.use(
   })
 );
 
-// const io = new Server(server);
 app.use(bodyParser.urlencoded({ extended: true }));
 
 
 
+// Socket.io connection handling
+io.on('connection', (socket: Socket) => {
+  console.log('Active');
 
-app.listen(process.env.PORT, () => {
-  console.log(`Server running on port ${PORT}...`);
+  // Broadcast a welcome message to the connected client
+  socket.emit('serverMessage', { content: 'Welcome to the chat!', sender: 'System' });
+
+  // Example: Broadcast a message to all connected clients
+  socket.on('clientMessage', (data: any) => {
+    console.log('Received message from client:', data);
+
+    // Broadcast the received message to all connected clients
+    io.emit('serverMessage', { content: data.content, sender: data.sender });
+  });
+
+  // Disconnect event
+  socket.on('disconnect', () => {
+    console.log('Inactive');
+  });
 });
 
+app.use("/api/v1/messages", messageRoutes);
 
-
+server.listen(PORT, () => {
+  console.log(`Server running on ${process.env.MONGO}:${PORT}`);
+});
