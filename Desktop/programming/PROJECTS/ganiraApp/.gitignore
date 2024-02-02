@@ -1,0 +1,4 @@
+node_modules
+.env
+accesstoken
+al.js

@@ -1,0 +1,18 @@
+{
+  "type": "postgres",
+  "host": "dpg-clfggqfjc5ks73e6qgcg-a",
+  "port": 5432,
+  "username":"rangurura_ol6i_user",
+  "password": "qCOjliek4DB9o7YqgXDT2T7EtRpqbizx",
+  "database": "rangurura_ol6i",
+  "synchronize": false,
+  "logging": true,
+  "entities": ["dist/entities/*.js"],
+  "migrations": ["migration/**/*.js"],
+  "subscribers": ["subscriber/**/*.js"],
+  "cli": {
+    "entitiesDir": "entities",
+    "migrationsDir": "migration",
+    "subscribersDir": "subscriber"
+  }
+}
